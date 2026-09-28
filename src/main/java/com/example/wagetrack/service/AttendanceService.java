@@ -1,13 +1,12 @@
 package com.example.wagetrack.service;
 
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-
 import com.example.wagetrack.model.Attendance;
 import com.example.wagetrack.model.Worker;
 import com.example.wagetrack.model.Worksite;
 import com.example.wagetrack.repository.AttendanceRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class AttendanceService {
@@ -31,9 +30,11 @@ public class AttendanceService {
     }
 
     public Attendance getAttendanceById(Long id) {
+
         return attendanceRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Attendance not found"));
+                        new RuntimeException(
+                                "Attendance not found with id: " + id));
     }
 
     public Attendance addAttendance(
@@ -111,10 +112,12 @@ public class AttendanceService {
                     workedHours - standardHours;
         }
 
-        double hourlyWage =
-                standardHours > 0
-                        ? dailyWage / standardHours
-                        : 0;
+        double hourlyWage = 0;
+
+        if (standardHours > 0) {
+            hourlyWage =
+                    dailyWage / standardHours;
+        }
 
         double overtimePay =
                 overtimeHours * hourlyWage * 1.5;
@@ -125,6 +128,10 @@ public class AttendanceService {
     }
 
     public void deleteAttendance(Long id) {
-        attendanceRepository.deleteById(id);
+
+        Attendance attendance =
+                getAttendanceById(id);
+
+        attendanceRepository.delete(attendance);
     }
 }

@@ -26,14 +26,14 @@ public class PageController {
         return "workers";
     }
 
-    @GetMapping("/worksites")
-    public String worksites() {
-        return "worksites";
-    }
-
     @GetMapping("/attendance")
     public String attendance() {
         return "attendance";
+    }
+
+    @GetMapping("/worksites")
+    public String worksites() {
+        return "worksites";
     }
 
     @GetMapping("/wages")

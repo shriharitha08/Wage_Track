@@ -163,6 +163,7 @@ function hideForm() {
 
 function clearForm() {
 
+    editMode = false;
     document.getElementById("workerId").value = "";
     document.getElementById("name").value = "";
     document.getElementById("phone").value = "";
@@ -229,6 +230,9 @@ async function loadWorkers() {
 
 async function saveWorker() {
 
+    const dailyWageRaw =
+        document.getElementById("dailyWage").value;
+
     const worker = {
 
         name:
@@ -238,9 +242,7 @@ async function saveWorker() {
             document.getElementById("phone").value,
 
         dailyWage:
-            Number(
-                document.getElementById("dailyWage").value
-            ),
+            Number(dailyWageRaw),
 
         standardWorkHours:
             Number(
@@ -254,7 +256,8 @@ async function saveWorker() {
 
     if (!worker.name ||
         !worker.phone ||
-        !worker.dailyWage) {
+        dailyWageRaw === "" ||
+        isNaN(worker.dailyWage)) {
 
         alert("Please fill all required fields");
 
@@ -262,51 +265,53 @@ async function saveWorker() {
     }
 
 
-    let url = "/api/workers";
-    let method = "POST";
-
-
     const id =
         document.getElementById("workerId").value;
 
+    const isEdit = editMode && id && id.trim() !== "";
 
-    if (editMode) {
+    let url = isEdit ? "/api/workers/" + id : "/api/workers";
+    let method = isEdit ? "PUT" : "POST";
 
-        url = "/api/workers/" + id;
-        method = "PUT";
+    try {
 
-    }
+        const response =
+            await fetch(url, {
 
+                method: method,
 
-    const response =
-        await fetch(url, {
+                headers: {
+                    "Content-Type": "application/json"
+                },
 
-            method: method,
+                body: JSON.stringify(worker)
 
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify(worker)
-
-        });
+            });
 
 
-    if (response.ok) {
+        if (response.ok) {
 
-        alert(
-            editMode
-                ? "Worker updated successfully"
-                : "Worker added successfully"
-        );
+            alert(
+                isEdit
+                    ? "Worker updated successfully"
+                    : "Worker added successfully"
+            );
 
-        hideForm();
+            hideForm();
 
-        loadWorkers();
+            loadWorkers();
 
-    } else {
+        } else {
 
-        alert("Unable to save worker");
+            const errorText = await response.text();
+            alert("Unable to save worker: " + errorText);
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+        alert("Unable to save worker: " + error.message);
 
     }
 

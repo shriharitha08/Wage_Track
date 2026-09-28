@@ -14,25 +14,28 @@ public class Worker {
     private Long id;
 
     private String name;
-
     private String phone;
-
     private double dailyWage;
-
     private double standardWorkHours;
-
     private String status;
 
-    @OneToMany(mappedBy = "worker")
+    @OneToMany(
+        mappedBy = "worker",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
     @JsonIgnore
     private List<Attendance> attendances;
 
-    @OneToMany(mappedBy = "worker")
+    @OneToMany(
+        mappedBy = "worker",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
     @JsonIgnore
     private List<Payment> payments;
 
-    public Worker() {
-    }
+    public Worker() {}
 
     public Long getId() {
         return id;

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Attendance | WageTrack</title>
+
+    <link rel="stylesheet" href="/style.css">
+
+</head>
+
+<body>
+
+<nav class="navbar">
+
+    <div class="logo">
+        WageTrack
+    </div>
+
+    <div class="nav-links">
+
+        <a href="/dashboard">Dashboard</a>
+        <a href="/workers">Workers</a>
+        <a href="/worksites">Worksites</a>
+        <a href="/attendance">Attendance</a>
+        <a href="/wages">Wages</a>
+        <a href="/payments">Payments</a>
+
+    </div>
+
+</nav>
+
+<div class="container">
+
+    <h1>Attendance</h1>
+
+    <p>Manage worker attendance.</p>
+
+    <div class="form-card">
+
+        <h2>Mark Attendance</h2>
+
+        <div class="form-group">
+
+            <label>Worker ID</label>
+
+            <input
+                type="number"
+                id="workerId"
+                placeholder="Enter Worker ID">
+
+        </div>
+
+        <div class="form-group">
+
+            <label>Worksite ID</label>
+
+            <input
+                type="number"
+                id="worksiteId"
+                placeholder="Enter Worksite ID">
+
+        </div>
+
+        <div class="form-group">
+
+            <label>Date</label>
+
+            <input
+                type="date"
+                id="attendanceDate">
+
+        </div>
+
+        <div class="form-group">
+
+            <label>Attendance</label>
+
+            <select id="attendanceType">
+
+                <option value="FULL_DAY">
+                    Full Day
+                </option>
+
+                <option value="HALF_DAY">
+                    Half Day
+                </option>
+
+                <option value="ABSENT">
+                    Absent
+                </option>
+
+            </select>
+
+        </div>
+
+        <div class="form-group">
+
+            <label>Worked Hours</label>
+
+            <input
+                type="number"
+                id="workedHours"
+                value="8"
+                step="0.5">
+
+        </div>
+
+        <button
+            class="btn"
+            onclick="saveAttendance()">
+
+            Save Attendance
+
+        </button>
+
+    </div>
+
+
+    <div class="table-card">
+
+        <h2>Attendance Records</h2>
+
+        <table>
+
+            <thead>
+
+            <tr>
+
+                <th>ID</th>
+                <th>Date</th>
+                <th>Worker</th>
+                <th>Worksite</th>
+                <th>Type</th>
+                <th>Hours</th>
+                <th>OT Hours</th>
+                <th>Daily Pay</th>
+                <th>OT Pay</th>
+                <th>Action</th>
+
+            </tr>
+
+            </thead>
+
+            <tbody id="attendanceTable">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<script>
+
+document.getElementById("attendanceDate").value =
+    new Date().toISOString().split("T")[0];
+
+
+async function loadAttendance() {
+
+    try {
+
+        const response =
+            await fetch("/api/attendance");
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Attendance API error: " +
+                response.status
+            );
+
+        }
+
+        const data =
+            await response.json();
+
+        const table =
+            document.getElementById(
+                "attendanceTable"
+            );
+
+        table.innerHTML = "";
+
+        data.forEach(function(a) {
+
+            const workerName =
+                a.worker
+                    ? a.worker.name
+                    : "-";
+
+            const worksiteName =
+                a.worksite
+                    ? a.worksite.name
+                    : "-";
+
+            const row =
+                document.createElement("tr");
+
+            row.innerHTML = `
+
+                <td>${a.id}</td>
+
+                <td>
+                    ${a.attendanceDate || "-"}
+                </td>
+
+                <td>
+                    ${workerName}
+                </td>
+
+                <td>
+                    ${worksiteName}
+                </td>
+
+                <td>
+                    ${a.attendanceType || "-"}
+                </td>
+
+                <td>
+                    ${a.workedHours || 0}
+                </td>
+
+                <td>
+                    ${a.overtimeHours || 0}
+                </td>
+
+                <td>
+                    ₹${a.dailyPay || 0}
+                </td>
+
+                <td>
+                    ₹${a.overtimePay || 0}
+                </td>
+
+                <td>
+
+                    <button
+                        class="small-btn danger"
+                        onclick="deleteAttendance(${a.id})">
+
+                        Delete
+
+                    </button>
+
+                </td>
+
+            `;
+
+            table.appendChild(row);
+
+        });
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to load attendance: " +
+            error.message
+        );
+
+    }
+
+}
+
+
+async function saveAttendance() {
+
+    const workerId =
+        document.getElementById(
+            "workerId"
+        ).value;
+
+    const worksiteId =
+        document.getElementById(
+            "worksiteId"
+        ).value;
+
+    const attendanceDate =
+        document.getElementById(
+            "attendanceDate"
+        ).value;
+
+    const attendanceType =
+        document.getElementById(
+            "attendanceType"
+        ).value;
+
+    const workedHours =
+        document.getElementById(
+            "workedHours"
+        ).value;
+
+
+    if (!workerId ||
+        !worksiteId ||
+        !attendanceDate) {
+
+        alert(
+            "Please enter Worker ID, Worksite ID and Date."
+        );
+
+        return;
+
+    }
+
+
+    const attendance = {
+
+        attendanceDate:
+            attendanceDate,
+
+        attendanceType:
+            attendanceType,
+
+        workedHours:
+            Number(workedHours)
+
+    };
+
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/attendance?workerId=${workerId}&worksiteId=${worksiteId}`,
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(
+                            attendance
+                        )
+
+                }
+            );
+
+
+        if (!response.ok) {
+
+            const errorText =
+                await response.text();
+
+            throw new Error(errorText);
+
+        }
+
+
+        alert(
+            "Attendance saved successfully!"
+        );
+
+
+        document.getElementById(
+            "workerId"
+        ).value = "";
+
+        document.getElementById(
+            "worksiteId"
+        ).value = "";
+
+        document.getElementById(
+            "workedHours"
+        ).value = 8;
+
+
+        loadAttendance();
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Could not save attendance:\n" +
+            error.message
+        );
+
+    }
+
+}
+
+
+async function deleteAttendance(id) {
+
+    if (!confirm(
+        "Delete this attendance?"
+    )) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/attendance/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                "Delete failed"
+            );
+        }
+
+        alert(
+            "Attendance deleted successfully."
+        );
+
+        loadAttendance();
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Could not delete attendance."
+        );
+
+    }
+
+}
+
+
+loadAttendance();
+
+</script>
+
+</body>
+
+</html>

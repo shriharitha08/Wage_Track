@@ -1,16 +1,9 @@
 package com.example.wagetrack.model;
 
-import java.time.LocalDate;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "attendance")
@@ -34,7 +27,7 @@ public class Attendance {
 
     @ManyToOne
     @JoinColumn(name = "worker_id")
-    @JsonIgnoreProperties({"attendances"})
+    @JsonIgnoreProperties({"attendances", "payments"})
     private Worker worker;
 
     @ManyToOne

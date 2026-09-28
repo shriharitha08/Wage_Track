@@ -22,7 +22,8 @@ public class WorkerService {
     public Worker getWorkerById(Long id) {
         return workerRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Worker not found"));
+                        new RuntimeException(
+                                "Worker not found with id: " + id));
     }
 
     public Worker addWorker(Worker worker) {
@@ -37,14 +38,16 @@ public class WorkerService {
         worker.setPhone(updatedWorker.getPhone());
         worker.setDailyWage(updatedWorker.getDailyWage());
         worker.setStandardWorkHours(
-                updatedWorker.getStandardWorkHours()
-        );
+                updatedWorker.getStandardWorkHours());
         worker.setStatus(updatedWorker.getStatus());
 
         return workerRepository.save(worker);
     }
 
     public void deleteWorker(Long id) {
-        workerRepository.deleteById(id);
+
+        Worker worker = getWorkerById(id);
+
+        workerRepository.delete(worker);
     }
 }
