@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Payments - WageTrack</title>
+
+    <link rel="stylesheet"
+          href="/style.css">
+
+</head>
+
+
+<body>
+
+
+<nav class="navbar">
+
+    <div class="logo">
+        WageTrack
+    </div>
+
+
+    <div class="nav-links">
+
+        <a href="/dashboard">Dashboard</a>
+        <a href="/workers">Workers</a>
+        <a href="/worksites">Worksites</a>
+        <a href="/attendance">Attendance</a>
+        <a href="/wages">Wages</a>
+        <a href="/payments">Payments</a>
+
+    </div>
+
+</nav>
+
+
+<div class="container">
+
+    <h1 class="page-title">
+        Payment Records
+    </h1>
+
+
+    <div class="form-card">
+
+        <h2>Record Payment</h2>
+
+        <br>
+
+
+        <form id="paymentForm">
+
+
+            <div class="form-group">
+
+                <label>Worker</label>
+
+                <select id="workerId"
+                        required>
+
+                    <option value="">
+                        Select Worker
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>Payment Date</label>
+
+                <input type="date"
+                       id="paymentDate"
+                       required>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>Amount Paid</label>
+
+                <input type="number"
+                       id="amountPaid"
+                       step="0.01"
+                       required>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>Payment Method</label>
+
+                <select id="paymentMethod">
+
+                    <option value="CASH">
+                        Cash
+                    </option>
+
+                    <option value="UPI">
+                        UPI
+                    </option>
+
+                    <option value="BANK">
+                        Bank Transfer
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>Remarks</label>
+
+                <input type="text"
+                       id="remarks">
+
+            </div>
+
+
+            <button class="btn"
+                    type="submit">
+
+                Record Payment
+
+            </button>
+
+
+        </form>
+
+
+        <p id="message"></p>
+
+    </div>
+
+
+    <br><br>
+
+
+    <h2>Payment History</h2>
+
+    <br>
+
+
+    <table>
+
+        <thead>
+
+        <tr>
+
+            <th>ID</th>
+            <th>Worker</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Remarks</th>
+
+        </tr>
+
+        </thead>
+
+
+        <tbody id="paymentTable"></tbody>
+
+    </table>
+
+</div>
+
+
+<script>
+
+
+async function loadWorkers() {
+
+    const response =
+        await fetch("/api/workers");
+
+    const workers =
+        await response.json();
+
+
+    const select =
+        document.getElementById("workerId");
+
+
+    workers.forEach(worker => {
+
+        select.innerHTML += `
+
+            <option value="${worker.id}">
+
+                ${worker.name}
+
+            </option>
+
+        `;
+
+    });
+
+}
+
+
+
+async function loadPayments() {
+
+    const response =
+        await fetch("/api/payments");
+
+    const payments =
+        await response.json();
+
+
+    const table =
+        document.getElementById("paymentTable");
+
+
+    table.innerHTML = "";
+
+
+    payments.forEach(payment => {
+
+        table.innerHTML += `
+
+            <tr>
+
+                <td>${payment.id}</td>
+
+                <td>
+                    ${payment.worker ?
+                        payment.worker.name : ""}
+                </td>
+
+                <td>${payment.paymentDate}</td>
+
+                <td>₹${payment.amountPaid}</td>
+
+                <td>${payment.paymentMethod}</td>
+
+                <td>${payment.remarks || ""}</td>
+
+            </tr>
+
+        `;
+
+    });
+
+}
+
+
+
+document.getElementById("paymentForm")
+.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+
+    const workerId =
+        document.getElementById("workerId").value;
+
+
+    const payment = {
+
+        paymentDate:
+            document.getElementById("paymentDate").value,
+
+        amountPaid:
+            Number(
+                document.getElementById("amountPaid").value
+            ),
+
+        paymentMethod:
+            document.getElementById("paymentMethod").value,
+
+        remarks:
+            document.getElementById("remarks").value
+
+    };
+
+
+    const response =
+        await fetch(
+            `/api/payments?workerId=${workerId}`,
+            {
+
+                method: "POST",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+                body:
+                    JSON.stringify(payment)
+
+            }
+        );
+
+
+    if (response.ok) {
+
+        document.getElementById("message")
+            .innerText =
+            "Payment recorded successfully";
+
+        document.getElementById("paymentForm")
+            .reset();
+
+        loadPayments();
+
+    } else {
+
+        document.getElementById("message")
+            .innerText =
+            "Failed to record payment";
+
+    }
+
+});
+
+
+loadWorkers();
+loadPayments();
+
+</script>
+
+
+</body>
+
+</html>

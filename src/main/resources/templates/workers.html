@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Workers - WageTrack</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<nav class="navbar">
+
+    <div class="logo">WageTrack</div>
+
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/workers">Workers</a>
+        <a href="/worksites">Worksites</a>
+        <a href="/attendance">Attendance</a>
+        <a href="/wages">Wages</a>
+        <a href="/payments">Payments</a>
+    </div>
+
+</nav>
+
+
+<div class="container">
+
+    <div class="page-header">
+
+        <div>
+            <h1>Workers</h1>
+            <p>Manage registered daily wage workers.</p>
+        </div>
+
+        <button class="btn"
+                onclick="showForm()">
+            + Add New Worker
+        </button>
+
+    </div>
+
+
+    <div id="workerFormBox"
+         class="form-card"
+         style="display:none;">
+
+        <h2 id="formTitle">
+            Add New Worker
+        </h2>
+
+        <br>
+
+        <input type="hidden" id="workerId">
+
+        <div class="form-group">
+            <label>Worker Name</label>
+            <input type="text" id="name">
+        </div>
+
+        <div class="form-group">
+            <label>Phone</label>
+            <input type="text" id="phone">
+        </div>
+
+        <div class="form-group">
+            <label>Daily Wage</label>
+            <input type="number" id="dailyWage">
+        </div>
+
+        <div class="form-group">
+            <label>Standard Work Hours</label>
+            <input type="number"
+                   id="standardWorkHours"
+                   value="8"
+                   step="0.5">
+        </div>
+
+        <div class="form-group">
+            <label>Status</label>
+
+            <select id="status">
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+            </select>
+        </div>
+
+        <button class="btn"
+                onclick="saveWorker()">
+            Save Worker
+        </button>
+
+        <button class="btn secondary"
+                onclick="hideForm()">
+            Cancel
+        </button>
+
+        <p id="message"></p>
+
+    </div>
+
+
+    <br>
+
+
+    <div class="table-card">
+
+        <table>
+
+            <thead>
+
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Daily Wage</th>
+                <th>Hours</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+
+            </thead>
+
+            <tbody id="workerTable"></tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<script>
+
+let editMode = false;
+
+
+function showForm() {
+
+    editMode = false;
+
+    document.getElementById("formTitle")
+        .innerText = "Add New Worker";
+
+    document.getElementById("workerFormBox")
+        .style.display = "block";
+
+    clearForm();
+}
+
+
+function hideForm() {
+
+    document.getElementById("workerFormBox")
+        .style.display = "none";
+
+    clearForm();
+}
+
+
+function clearForm() {
+
+    document.getElementById("workerId").value = "";
+    document.getElementById("name").value = "";
+    document.getElementById("phone").value = "";
+    document.getElementById("dailyWage").value = "";
+    document.getElementById("standardWorkHours").value = "8";
+    document.getElementById("status").value = "ACTIVE";
+
+}
+
+
+async function loadWorkers() {
+
+    const response =
+        await fetch("/api/workers");
+
+    const workers =
+        await response.json();
+
+    const table =
+        document.getElementById("workerTable");
+
+    table.innerHTML = "";
+
+    workers.forEach(worker => {
+
+        table.innerHTML += `
+
+        <tr>
+
+            <td>${worker.id}</td>
+
+            <td>${worker.name}</td>
+
+            <td>${worker.phone}</td>
+
+            <td>₹${worker.dailyWage}</td>
+
+            <td>${worker.standardWorkHours}</td>
+
+            <td>${worker.status}</td>
+
+            <td>
+
+                <button class="small-btn"
+                        onclick='editWorker(${JSON.stringify(worker)})'>
+                    Edit
+                </button>
+
+                <button class="small-btn danger"
+                        onclick="deleteWorker(${worker.id})">
+                    Delete
+                </button>
+
+            </td>
+
+        </tr>
+
+        `;
+
+    });
+
+}
+
+
+async function saveWorker() {
+
+    const worker = {
+
+        name:
+            document.getElementById("name").value,
+
+        phone:
+            document.getElementById("phone").value,
+
+        dailyWage:
+            Number(
+                document.getElementById("dailyWage").value
+            ),
+
+        standardWorkHours:
+            Number(
+                document.getElementById("standardWorkHours").value
+            ),
+
+        status:
+            document.getElementById("status").value
+    };
+
+
+    if (!worker.name ||
+        !worker.phone ||
+        !worker.dailyWage) {
+
+        alert("Please fill all required fields");
+
+        return;
+    }
+
+
+    let url = "/api/workers";
+    let method = "POST";
+
+
+    const id =
+        document.getElementById("workerId").value;
+
+
+    if (editMode) {
+
+        url = "/api/workers/" + id;
+        method = "PUT";
+
+    }
+
+
+    const response =
+        await fetch(url, {
+
+            method: method,
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(worker)
+
+        });
+
+
+    if (response.ok) {
+
+        alert(
+            editMode
+                ? "Worker updated successfully"
+                : "Worker added successfully"
+        );
+
+        hideForm();
+
+        loadWorkers();
+
+    } else {
+
+        alert("Unable to save worker");
+
+    }
+
+}
+
+
+function editWorker(worker) {
+
+    editMode = true;
+
+    document.getElementById("formTitle")
+        .innerText = "Edit Worker";
+
+    document.getElementById("workerFormBox")
+        .style.display = "block";
+
+
+    document.getElementById("workerId")
+        .value = worker.id;
+
+    document.getElementById("name")
+        .value = worker.name;
+
+    document.getElementById("phone")
+        .value = worker.phone;
+
+    document.getElementById("dailyWage")
+        .value = worker.dailyWage;
+
+    document.getElementById("standardWorkHours")
+        .value = worker.standardWorkHours;
+
+    document.getElementById("status")
+        .value = worker.status;
+
+}
+
+
+async function deleteWorker(id) {
+
+    if (!confirm("Are you sure you want to delete this worker?")) {
+        return;
+    }
+
+
+    const response =
+        await fetch(
+            "/api/workers/" + id,
+            {
+                method: "DELETE"
+            }
+        );
+
+
+    if (response.ok) {
+
+        alert("Worker deleted successfully");
+
+        loadWorkers();
+
+    } else {
+
+        alert("Unable to delete worker");
+
+    }
+
+}
+
+
+loadWorkers();
+
+</script>
+
+</body>
+</html>

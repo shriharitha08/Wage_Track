@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - WageTrack</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<nav class="navbar">
+
+    <div class="logo">WageTrack</div>
+
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/workers">Workers</a>
+        <a href="/worksites">Worksites</a>
+        <a href="/attendance">Attendance</a>
+        <a href="/wages">Wages</a>
+        <a href="/payments">Payments</a>
+        <a href="/">Logout</a>
+    </div>
+
+</nav>
+
+<div class="container">
+
+    <h1 class="page-title">Dashboard</h1>
+
+    <div class="card-grid">
+
+        <div class="card">
+            <h3>Total Workers</h3>
+            <div class="stat-number" id="workerCount">0</div>
+        </div>
+
+        <div class="card">
+            <h3>Worksites</h3>
+            <div class="stat-number" id="siteCount">0</div>
+        </div>
+
+        <div class="card">
+            <h3>Attendance</h3>
+            <div class="stat-number" id="attendanceCount">0</div>
+        </div>
+
+        <div class="card">
+            <h3>Payments</h3>
+            <div class="stat-number" id="paymentCount">0</div>
+        </div>
+
+    </div>
+
+    <br><br>
+
+    <div class="card">
+
+        <h3>Quick Actions</h3>
+
+        <br>
+
+        <a href="/workers" class="btn">Manage Workers</a>
+
+        <a href="/attendance" class="btn">Mark Attendance</a>
+
+        <a href="/wages" class="btn">View Wages</a>
+
+    </div>
+
+</div>
+
+<script>
+
+async function loadDashboard() {
+
+    try {
+
+        const workers = await fetch("/api/workers")
+            .then(response => response.json());
+
+        const worksites = await fetch("/api/worksites")
+            .then(response => response.json());
+
+        const attendance = await fetch("/api/attendance")
+            .then(response => response.json());
+
+        const payments = await fetch("/api/payments")
+            .then(response => response.json());
+
+        document.getElementById("workerCount").innerText = workers.length;
+        document.getElementById("siteCount").innerText = worksites.length;
+        document.getElementById("attendanceCount").innerText = attendance.length;
+        document.getElementById("paymentCount").innerText = payments.length;
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+loadDashboard();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Wages - WageTrack</title>
+
+    <link rel="stylesheet"
+          href="/style.css">
+
+</head>
+
+
+<body>
+
+
+<nav class="navbar">
+
+    <div class="logo">
+        WageTrack
+    </div>
+
+    <div class="nav-links">
+
+        <a href="/dashboard">Dashboard</a>
+        <a href="/workers">Workers</a>
+        <a href="/worksites">Worksites</a>
+        <a href="/attendance">Attendance</a>
+        <a href="/wages">Wages</a>
+        <a href="/payments">Payments</a>
+
+    </div>
+
+</nav>
+
+
+<div class="container">
+
+    <h1 class="page-title">
+        Weekly Wage Summary
+    </h1>
+
+
+    <div class="form-card">
+
+        <h2>Generate Summary</h2>
+
+        <br>
+
+
+        <div class="form-group">
+
+            <label>Worker</label>
+
+            <select id="workerId">
+
+                <option value="">
+                    Select Worker
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Week Start</label>
+
+            <input type="date"
+                   id="startDate">
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Week End</label>
+
+            <input type="date"
+                   id="endDate">
+
+        </div>
+
+
+        <button class="btn"
+                onclick="generateSummary()">
+
+            Generate Wage Summary
+
+        </button>
+
+
+        <p id="message"></p>
+
+    </div>
+
+
+    <br><br>
+
+
+    <h2>Generated Summaries</h2>
+
+    <br>
+
+
+    <table>
+
+        <thead>
+
+        <tr>
+
+            <th>Worker</th>
+            <th>Week</th>
+            <th>Full Days</th>
+            <th>Half Days</th>
+            <th>Absent</th>
+            <th>OT Hours</th>
+            <th>Regular Wage</th>
+            <th>OT Pay</th>
+            <th>Total Payable</th>
+
+        </tr>
+
+        </thead>
+
+
+        <tbody id="wageTable"></tbody>
+
+    </table>
+
+</div>
+
+
+<script>
+
+
+async function loadWorkers() {
+
+    const response =
+        await fetch("/api/workers");
+
+    const workers =
+        await response.json();
+
+
+    const select =
+        document.getElementById("workerId");
+
+
+    workers.forEach(worker => {
+
+        select.innerHTML += `
+
+            <option value="${worker.id}">
+
+                ${worker.name}
+
+            </option>
+
+        `;
+
+    });
+
+}
+
+
+
+async function generateSummary() {
+
+    const workerId =
+        document.getElementById("workerId").value;
+
+    const start =
+        document.getElementById("startDate").value;
+
+    const end =
+        document.getElementById("endDate").value;
+
+
+    if (!workerId || !start || !end) {
+
+        document.getElementById("message")
+            .innerText =
+            "Please select all fields";
+
+        return;
+
+    }
+
+
+    const response =
+        await fetch(
+            `/api/wages/weekly/${workerId}?start=${start}&end=${end}`,
+            {
+                method: "POST"
+            }
+        );
+
+
+    if (response.ok) {
+
+        document.getElementById("message")
+            .innerText =
+            "Weekly wage summary generated";
+
+        loadSummaries();
+
+    } else {
+
+        document.getElementById("message")
+            .innerText =
+            "Unable to generate summary";
+
+    }
+
+}
+
+
+
+async function loadSummaries() {
+
+    const response =
+        await fetch("/api/wages");
+
+    const summaries =
+        await response.json();
+
+
+    const table =
+        document.getElementById("wageTable");
+
+
+    table.innerHTML = "";
+
+
+    summaries.forEach(summary => {
+
+        table.innerHTML += `
+
+            <tr>
+
+                <td>
+                    ${summary.worker ?
+                        summary.worker.name : ""}
+                </td>
+
+                <td>
+                    ${summary.weekStart}
+                    to
+                    ${summary.weekEnd}
+                </td>
+
+                <td>${summary.fullDays}</td>
+
+                <td>${summary.halfDays}</td>
+
+                <td>${summary.absentDays}</td>
+
+                <td>${summary.overtimeHours}</td>
+
+                <td>₹${summary.regularWage}</td>
+
+                <td>₹${summary.overtimePay}</td>
+
+                <td>
+                    <strong>
+                        ₹${summary.totalPayable}
+                    </strong>
+                </td>
+
+            </tr>
+
+        `;
+
+    });
+
+}
+
+
+loadWorkers();
+loadSummaries();
+
+
+</script>
+
+
+</body>
+
+</html>

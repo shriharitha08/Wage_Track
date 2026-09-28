@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Worksites - WageTrack</title>
+
+    <link rel="stylesheet"
+          href="/style.css">
+
+</head>
+
+<body>
+
+<nav class="navbar">
+
+    <div class="logo">WageTrack</div>
+
+    <div class="nav-links">
+
+        <a href="/dashboard">Dashboard</a>
+        <a href="/workers">Workers</a>
+        <a href="/worksites">Worksites</a>
+        <a href="/attendance">Attendance</a>
+        <a href="/wages">Wages</a>
+        <a href="/payments">Payments</a>
+
+    </div>
+
+</nav>
+
+
+<div class="container">
+
+    <div class="page-header">
+
+        <div>
+
+            <h1>Worksites</h1>
+
+            <p>
+                Manage your project work locations.
+            </p>
+
+        </div>
+
+        <button class="btn"
+                onclick="showForm()">
+
+            + Add New Worksite
+
+        </button>
+
+    </div>
+
+
+    <div id="siteFormBox"
+         class="form-card"
+         style="display:none;">
+
+        <h2 id="formTitle">
+            Add New Worksite
+        </h2>
+
+        <br>
+
+        <input type="hidden"
+               id="siteId">
+
+
+        <div class="form-group">
+
+            <label>Site Name</label>
+
+            <input type="text"
+                   id="siteName">
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Location</label>
+
+            <input type="text"
+                   id="location">
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Description</label>
+
+            <input type="text"
+                   id="description">
+
+        </div>
+
+
+        <button class="btn"
+                onclick="saveSite()">
+
+            Save Worksite
+
+        </button>
+
+
+        <button class="btn secondary"
+                onclick="hideForm()">
+
+            Cancel
+
+        </button>
+
+    </div>
+
+
+    <br>
+
+
+    <div class="table-card">
+
+        <table>
+
+            <thead>
+
+            <tr>
+
+                <th>ID</th>
+                <th>Site</th>
+                <th>Location</th>
+                <th>Description</th>
+                <th>Actions</th>
+
+            </tr>
+
+            </thead>
+
+
+            <tbody id="siteTable"></tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<script>
+
+let editMode = false;
+
+
+function showForm() {
+
+    editMode = false;
+
+    document.getElementById("formTitle")
+        .innerText = "Add New Worksite";
+
+    document.getElementById("siteFormBox")
+        .style.display = "block";
+
+    clearForm();
+
+}
+
+
+function hideForm() {
+
+    document.getElementById("siteFormBox")
+        .style.display = "none";
+
+}
+
+
+function clearForm() {
+
+    document.getElementById("siteId").value = "";
+    document.getElementById("siteName").value = "";
+    document.getElementById("location").value = "";
+    document.getElementById("description").value = "";
+
+}
+
+
+async function loadWorksites() {
+
+    const response =
+        await fetch("/api/worksites");
+
+    const sites =
+        await response.json();
+
+    const table =
+        document.getElementById("siteTable");
+
+    table.innerHTML = "";
+
+
+    sites.forEach(site => {
+
+        table.innerHTML += `
+
+        <tr>
+
+            <td>${site.id}</td>
+
+            <td>${site.siteName}</td>
+
+            <td>${site.location}</td>
+
+            <td>${site.description || ""}</td>
+
+            <td>
+
+                <button class="small-btn"
+                        onclick='editSite(${JSON.stringify(site)})'>
+                    Edit
+                </button>
+
+                <button class="small-btn danger"
+                        onclick="deleteSite(${site.id})">
+                    Delete
+                </button>
+
+            </td>
+
+        </tr>
+
+        `;
+
+    });
+
+}
+
+
+async function saveSite() {
+
+    const site = {
+
+        siteName:
+            document.getElementById("siteName").value,
+
+        location:
+            document.getElementById("location").value,
+
+        description:
+            document.getElementById("description").value
+
+    };
+
+
+    if (!site.siteName || !site.location) {
+
+        alert("Enter site name and location");
+
+        return;
+
+    }
+
+
+    let url = "/api/worksites";
+    let method = "POST";
+
+
+    const id =
+        document.getElementById("siteId").value;
+
+
+    if (editMode) {
+
+        url = "/api/worksites/" + id;
+        method = "PUT";
+
+    }
+
+
+    const response =
+        await fetch(url, {
+
+            method: method,
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(site)
+
+        });
+
+
+    if (response.ok) {
+
+        alert(
+            editMode
+                ? "Worksite updated"
+                : "Worksite added"
+        );
+
+        hideForm();
+
+        loadWorksites();
+
+    } else {
+
+        alert("Unable to save worksite");
+
+    }
+
+}
+
+
+function editSite(site) {
+
+    editMode = true;
+
+    document.getElementById("formTitle")
+        .innerText = "Edit Worksite";
+
+    document.getElementById("siteFormBox")
+        .style.display = "block";
+
+
+    document.getElementById("siteId")
+        .value = site.id;
+
+    document.getElementById("siteName")
+        .value = site.siteName;
+
+    document.getElementById("location")
+        .value = site.location;
+
+    document.getElementById("description")
+        .value = site.description || "";
+
+}
+
+
+async function deleteSite(id) {
+
+    if (!confirm("Delete this worksite?")) {
+        return;
+    }
+
+
+    const response =
+        await fetch(
+            "/api/worksites/" + id,
+            {
+                method: "DELETE"
+            }
+        );
+
+
+    if (response.ok) {
+
+        alert("Worksite deleted");
+
+        loadWorksites();
+
+    } else {
+
+        alert("Unable to delete worksite");
+
+    }
+
+}
+
+
+loadWorksites();
+
+</script>
+
+</body>
+
+</html>
